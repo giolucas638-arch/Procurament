@@ -197,7 +197,7 @@
 const CFG_KEY = 'genesis_supabase_cfg';
 let SUPABASE_URL = '';
 let SUPABASE_ANON_KEY = '';
-let supabase = null;
+let sbClient = null;
 
 function loadCfg() {
   try {
@@ -244,7 +244,7 @@ window.connectSupabase = async () => {
 // ─────────────────────────────────────────────
 async function initSupabase() {
   try {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     setSyncStatus('syncing', 'carregando...');
     await loadFromDB();
     renderSetupBanner();
@@ -268,7 +268,7 @@ function setSyncStatus(state, label) {
 //  DATABASE OPERATIONS
 // ─────────────────────────────────────────────
 async function loadFromDB() {
-  const { data: rows, error } = await supabase
+  const { data: rows, error } = await sbClient
     .from('transportadores')
     .select('*')
     .order('id', { ascending: true });
@@ -293,7 +293,7 @@ async function loadFromDB() {
 
 async function dbInsert(row) {
   setSyncStatus('syncing', 'salvando...');
-  const { data: inserted, error } = await supabase
+  const { data: inserted, error } = await sbClient
     .from('transportadores')
     .insert([toDbRow(row)])
     .select()
@@ -317,14 +317,14 @@ async function dbUpdate(id, fields) {
   if ('homologado'  in fields) dbFields.homologado  = fields.homologado;
   if ('contatos'    in fields) dbFields.contatos    = fields.contatos;
   if ('clientes'    in fields) dbFields.clientes    = fields.clientes;
-  const { error } = await supabase.from('transportadores').update(dbFields).eq('id', id);
+  const { error } = await sbClient.from('transportadores').update(dbFields).eq('id', id);
   if (error) { setSyncStatus('error', 'erro ao salvar'); console.error(error); return; }
   setSyncStatus('ok', 'salvo');
 }
 
 async function dbDelete(id) {
   setSyncStatus('syncing', 'removendo...');
-  const { error } = await supabase.from('transportadores').delete().eq('id', id);
+  const { error } = await sbClient.from('transportadores').delete().eq('id', id);
   if (error) { setSyncStatus('error', 'erro'); console.error(error); return; }
   setSyncStatus('ok', 'removido');
 }
@@ -337,7 +337,7 @@ function toDbRow(r) {
 
 // Realtime — atualiza automaticamente quando outro usuário editar
 function subscribeRealtime() {
-  supabase.channel('transportadores-changes')
+  sbClient.channel('transportadores-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'transportadores' }, () => {
       loadFromDB();
     })
@@ -544,7 +544,7 @@ function render(){
     document.getElementById('app').innerHTML=`<div class="loading-screen"><i class="ti ti-database-off" style="font-size:40px;opacity:.3"></i><p style="font-size:14px;font-weight:500">Banco de dados não configurado</p><p style="font-size:12px">Preencha a URL e a chave do Supabase acima para começar.</p></div>`;
     return;
   }
-  if(!dbLoaded && supabase){
+  if(!dbLoaded && sbClient){
     document.getElementById('app').innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Carregando dados...</p></div>`;
     return;
   }
