@@ -287,6 +287,7 @@ async function loadFromDB() {
     contatos: r.contatos || [],
     clientes: r.clientes || [],
   }));
+  dbLoaded = true;
   render();
 }
 
@@ -359,6 +360,7 @@ const AV_COLORS=['#E6F1FB|#185FA5','#E1F5EE|#0F6E56','#FAEEDA|#854F0B','#EEEDFE|
 const CLI_COLORS=['#185FA5','#3B6D11','#854F0B','#534AB7','#993C1D','#0F6E56'];
 
 let data = [];
+    let dbLoaded = false;
 let selectedRegioes=new Set(), filterTipo='Todos';
 let sortCol='regiao', sortDir=1;
 let openModal=null, activeTab='contatos';
@@ -542,7 +544,7 @@ function render(){
     document.getElementById('app').innerHTML=`<div class="loading-screen"><i class="ti ti-database-off" style="font-size:40px;opacity:.3"></i><p style="font-size:14px;font-weight:500">Banco de dados não configurado</p><p style="font-size:12px">Preencha a URL e a chave do Supabase acima para começar.</p></div>`;
     return;
   }
-  if(!data.length && supabase){
+  if(!dbLoaded && supabase){
     document.getElementById('app').innerHTML=`<div class="loading-screen"><div class="spinner"></div><p>Carregando dados...</p></div>`;
     return;
   }
